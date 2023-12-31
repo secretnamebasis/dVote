@@ -1,0 +1,32 @@
+/*
+This issue is in regards to blah blah
+*/
+
+Function Initialize() Uint64
+10 IF EXISTS("init") THEN GOTO 50
+20 STORE("init", 1)
+30 RETURN 0
+50 RETURN 1
+End Function
+
+Function SetClose(d Uint64) Uint64
+IF EXISTS("Closed") THEN GOTO 100
+IF EXISTS("Close") THEN GOTO 100
+LET c = d + BLOCK_TIMESTAMP()
+STORE("Close", c)
+99 RETURN 0 // pass
+100 RETURN 1 // fail
+End Function
+
+Function RegisterToVote() Uint64
+1 IF EXISTS(SIGNER()) THEN GOTO 100
+2 IF EXISTS("Closed") THEN GOTO 100
+3 IF EXISTS("Close") != 1 THEN GOTO 100
+4 IF BLOCK_TIMESTAMP() => LOAD("Close") THEN GOTO 8
+5 SEND_ASSET_TO_ADDRESS(SIGNER(), 1, SCID())
+6 STORE(SIGNER(),1)
+7 RETURN 0
+8 STORE("Closed", 1)
+9 GOTO 7
+100 RETURN 1
+End Function

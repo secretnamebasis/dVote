@@ -1,0 +1,110 @@
+// This is a dvote contract
+
+Function Initialize() Uint64
+1 IF LOAD("Init") == 1 THEN GOTO 100
+2 STORE("Init", 1)
+8 ResetVote()
+9 RETURN 0
+100 RETURN 1
+End Function
+
+Function StartVote(m String, d Uint64, x String) Uint64
+1 IF LOAD("Started") == 1 THEN GOTO 100
+2 IF m != "" || "Easy" || "Simple" || "Super" THEN GOTO 100
+2 STORE("Method", m)
+2 DIM e, s as Uint64
+3 LET s = LOAD("Start") + BLOCK_TIMESTAMP()
+4 STORE("Started", 1)
+5 LET e = BLOCK_TIMESTAMP() + d
+6 STORE("End", e)
+7 STORE("Current", x)
+99 RETURN 1
+100 RETURN 0
+End Function
+
+Function CheckVote() Uint64
+1 IF LOAD("Ended") >= 1 THEN GOTO 100
+10 IF LOAD("End") >=  BLOCK_TIMESTAMP() THEN GOTO 100
+20 determine() // if this returns a 1, you have a no
+99 RETURN 0  // pass
+100 RETURN 1 // fail
+End Function
+
+Function determine() Uint64
+10 DIM c // as TotalCount
+11 DIM y // as YesCount
+12 DIM n // as NoCount
+13 LET y = LOAD("YesCount")
+14 IF y == 0 THEN GOTO 80 // no one said yes
+15 LET n = LOAD("NoCount")
+16 IF n == 0 THEN GOTO 90 // no one said no
+17 LET c = y + n  // total count
+18 IF c <= 1 THEN GOTO 19 // one said yea or nay
+19 IF c <= y THEN GOTO 90 // where yes is gt. eq. than count, eg 1 is equal to 1, known as unanimous
+20 IF c <= 2 THEN GOTO 21 // where count 2 or less
+21 IF n >= y THEN GOTO 80 // ties result in a no
+22 IF LOAD("Category") == "Easy" || "" THEN GOTO 23 ELSE GOTO 45
+23 IF ( y >= n ) THEN GOTO 90 ELSE 80
+45 IF LOAD("Category") == "Simple" THEN GOTO 50 ELSE GOTO 60
+50 IF y >= (c / 2) THEN GOTO 90 ELSE GOTO 80
+60 IF LOAD("Category") == "Super" THEN GOTO 65 ELSE GOTO 70
+65 IF y >= ( 2 * c / 3) THEN GOTO 90 ELSE GOTO 80
+80 STORE("Winner", "No")
+81 GOTO 95
+90 STORE("Winner", "Yes")
+95 STORE(LOAD("Current"), LOAD("Winner"))
+96 STORE(BLOCK_TIMESTAMP(), LOAD("Current"))
+97 STORE("Ended", 1)
+99 RETURN 0 // pass
+100 RETURN 1 // fail
+End Function
+
+Function ResetVote() Uint64
+1 IF EXISTS("Resetable") == 0 THEN GOTO 4
+2 IF LOAD("Resetable") == 1 THEN GOTO 4 ELSE GOTO 100
+2 IF LOAD("Ended") == 1 THEN GOTO 4
+3 IF LOAD("Updated") == 0 THEN GOTO 100
+4 STORE("Resetable", 1)
+4 STORE("YesCount", 0)
+4 STORE("NoCount", 0)
+4 STORE("Start", 0)
+4 STORE("Started", 0)
+4 STORE("End", 0)
+4 STORE("Ended", 0)
+4 STORE("Winner", "")
+4 STORE("Current", "")
+3 STORE("Method", "")
+3 STORE("", 0)
+5 RETURN 0
+100 RETURN 1
+End Function
+
+
+Function StringString(s String, s String) Uint64
+1 STORE(s,s)
+End Function
+
+Function UintUint(u Uint64, u Uint64) Uint64
+1 STORE(u,u)
+End Function
+
+Function StringUint(s String, u Uint64) Uint64
+1 STORE(s,u)
+End Function
+
+
+Function VoteNo(x String) Uint64
+1 IF ASSETVALUE(LOAD("Current")) == 1 THEN STORE("No", LOAD("Count")+1)
+End Function
+
+Function VoteYes() Uint64
+1 IF ASSETVALUE("Current") == 1 THEN STORE("Yes", LOAD("Count")+1)
+End Function
+
+Function UpdateCode( code String) Uint64
+1 IF LOAD("Ended") == 1 THEN GOTO 10 ELSE GOTO 20
+10  IF LOAD("owner") == SIGNER() THEN GOTO 30
+20  RETURN 1
+30  UPDATE_SC_CODE(code)
+40  RETURN 0
+End Function
