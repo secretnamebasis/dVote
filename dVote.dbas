@@ -1,110 +1,297 @@
-// This is a dvote contract
-
-Function Initialize() Uint64
-1 IF LOAD("Init") == 1 THEN GOTO 100
-2 STORE("Init", 1)
-8 ResetVote()
-9 RETURN 0
-100 RETURN 1
-End Function
-
-Function StartVote(m String, d Uint64, x String) Uint64
-1 IF LOAD("Started") == 1 THEN GOTO 100
-2 IF m != "" || "Easy" || "Simple" || "Super" THEN GOTO 100
-2 STORE("Method", m)
-2 DIM e, s as Uint64
-3 LET s = LOAD("Start") + BLOCK_TIMESTAMP()
-4 STORE("Started", 1)
-5 LET e = BLOCK_TIMESTAMP() + d
-6 STORE("End", e)
-7 STORE("Current", x)
-99 RETURN 1
-100 RETURN 0
-End Function
-
-Function CheckVote() Uint64
-1 IF LOAD("Ended") >= 1 THEN GOTO 100
-10 IF LOAD("End") >=  BLOCK_TIMESTAMP() THEN GOTO 100
-20 determine() // if this returns a 1, you have a no
-99 RETURN 0  // pass
-100 RETURN 1 // fail
-End Function
-
-Function determine() Uint64
-10 DIM c // as TotalCount
-11 DIM y // as YesCount
-12 DIM n // as NoCount
-13 LET y = LOAD("YesCount")
-14 IF y == 0 THEN GOTO 80 // no one said yes
-15 LET n = LOAD("NoCount")
-16 IF n == 0 THEN GOTO 90 // no one said no
-17 LET c = y + n  // total count
-18 IF c <= 1 THEN GOTO 19 // one said yea or nay
-19 IF c <= y THEN GOTO 90 // where yes is gt. eq. than count, eg 1 is equal to 1, known as unanimous
-20 IF c <= 2 THEN GOTO 21 // where count 2 or less
-21 IF n >= y THEN GOTO 80 // ties result in a no
-22 IF LOAD("Category") == "Easy" || "" THEN GOTO 23 ELSE GOTO 45
-23 IF ( y >= n ) THEN GOTO 90 ELSE 80
-45 IF LOAD("Category") == "Simple" THEN GOTO 50 ELSE GOTO 60
-50 IF y >= (c / 2) THEN GOTO 90 ELSE GOTO 80
-60 IF LOAD("Category") == "Super" THEN GOTO 65 ELSE GOTO 70
-65 IF y >= ( 2 * c / 3) THEN GOTO 90 ELSE GOTO 80
-80 STORE("Winner", "No")
-81 GOTO 95
-90 STORE("Winner", "Yes")
-95 STORE(LOAD("Current"), LOAD("Winner"))
-96 STORE(BLOCK_TIMESTAMP(), LOAD("Current"))
-97 STORE("Ended", 1)
-99 RETURN 0 // pass
-100 RETURN 1 // fail
-End Function
-
-Function ResetVote() Uint64
-1 IF EXISTS("Resetable") == 0 THEN GOTO 4
-2 IF LOAD("Resetable") == 1 THEN GOTO 4 ELSE GOTO 100
-2 IF LOAD("Ended") == 1 THEN GOTO 4
-3 IF LOAD("Updated") == 0 THEN GOTO 100
-4 STORE("Resetable", 1)
-4 STORE("YesCount", 0)
-4 STORE("NoCount", 0)
-4 STORE("Start", 0)
-4 STORE("Started", 0)
-4 STORE("End", 0)
-4 STORE("Ended", 0)
-4 STORE("Winner", "")
-4 STORE("Current", "")
-3 STORE("Method", "")
-3 STORE("", 0)
-5 RETURN 0
-100 RETURN 1
+Function InitializePrivate() Uint64
+1 IF getCreator() != "false" THEN GOTO 4
+2 STORE("Creator", ADDRESS_STRING(SIGNER())) // mandatory: the address of the creator (mandatory for withdraw and update functions)
+3 RETURN 0
+4 RETURN 1
 End Function
 
 
-Function StringString(s String, s String) Uint64
-1 STORE(s,s)
+// *************************************************
+// public voting functions
+// *************************************************
+Function Vote(choice Uint64) Uint64 // 0 = no, 1 = yes, 2 = abstain
+1 IF ASSETVALUE(SCID()) < 1 || DEROVALUE() < (getVotingFee() * ASSETVALUE(SCID())) || isVotingOpen() != 1 || choice < 0 || choice > 2 || (getRejectAnonymousVote() != 0 && isSignerKnown() != 1) THEN GOTO 5
+2 addVote(choice, ASSETVALUE(SCID()))
+3 addBalance(getVotingFee() * ASSETVALUE(SCID()))
+4 RETURN refund(0, DEROVALUE() - (getVotingFee() * ASSETVALUE(SCID())))
+5 RETURN refund(ASSETVALUE(SCID()), DEROVALUE())
 End Function
 
-Function UintUint(u Uint64, u Uint64) Uint64
-1 STORE(u,u)
+// getVotes(0) = no, getVotes(1) = yes, getVotes(2) = abstain, getVotes(3) = invalid, getVotes(4) = total
+// getVotesMin(0) = no, getVotesMin(1) = yes, getVotesMin(2) = total
+Function TallyVotes() Uint64
+1 DIM conclusion as Uint64
+2 LET conclusion = 2 // inconclusive
+// vote count based conclusion
+3 IF getVotesMin(0) == 0 || getVotesMin(0) > getVotes(0) THEN GOTO 5
+4 LET conclusion = 0 // no
+5 IF getVotesMin(1) == 0 || getVotesMin(1) > getVotes(1) THEN GOTO 7
+6 LET conclusion = 1 // yes
+7 IF conclusion != 2 THEN GOTO 15
+// time based conclusion
+8 IF getVotingEnd() == 0 || getVotingEnd() > BLOCK_TIMESTAMP() THEN GOTO 16 // time not yet up
+9 IF getVotesMin(2) == 0 || getVotesMin(2) > getVotes(4) THEN GOTO 15 // concluded as inconclusive
+10 IF getVotes(0) == getVotes(1) THEN GOTO 15 // concluded as inconclusive
+11 IF getVotes(0) > getVotes(1) THEN GOTO 14
+12 LET conclusion = 1 // yes
+13 GOTO 15
+14 LET conclusion = 0 // no
+15 STORE("Conclusion", conclusion)
+16 RETURN 0
 End Function
 
-Function StringUint(s String, u Uint64) Uint64
-1 STORE(s,u)
+// *************************************************
+// public admin functions
+// *************************************************
+Function UpdateDescription(description String) Uint64
+1 IF isCreator() != 1 THEN GOTO 3
+2 RETURN setDescription(HEXDECODE(description))
+3 RETURN 1
+End Function
+
+Function UpdateVotesMax(qty Uint64) Uint64
+1 IF isCreator() != 1 THEN GOTO 3
+2 RETURN setVotesMax(qty)
+3 RETURN 1
+End Function
+
+Function UpdateVotingStart(timestamp Uint64) Uint64
+1 IF isCreator() != 1 THEN GOTO 3
+2 RETURN setVotingStart(timestamp)
+3 RETURN 1
+End Function
+
+Function UpdateVotingEnd(timestamp Uint64) Uint64
+1 IF isCreator() != 1 THEN GOTO 3
+2 RETURN setVotingEnd(timestamp)
+3 RETURN 1
+End Function
+
+Function UpdateVotesMin(qty Uint64, option Uint64) Uint64
+1 IF isCreator() != 1 THEN GOTO 3
+2 RETURN setVotesMin(qty, option)
+3 RETURN 1
+End Function
+
+Function UpdateVotingFee(qtyDeri Uint64) Uint64
+1 IF isCreator() != 1 THEN GOTO 3
+2 RETURN setVotingFee(qtyDeri)
+3 RETURN 1
+End Function
+
+Function UpdateDisplayVoters(display Uint64) Uint64
+1 IF isCreator() != 1 THEN GOTO 3
+2 RETURN setDisplayVoters(display)
+3 RETURN 1
+End Function
+
+Function UpdateRejectAnonymousVote(reject Uint64) Uint64
+1 IF isCreator() != 1 THEN GOTO 3
+2 RETURN setRejectAnonymousVote(reject)
+3 RETURN 1
+End Function
+
+Function Withdraw(qtyDeri Uint64) Uint64
+1 IF isCreator() != 1 THEN GOTO 7
+2 IF qtyDeri > getBalance() THEN GOTO 5 // allow to override the balance
+3 STORE("Balance", getBalance() - qtyDeri)
+4 GOTO 6
+5 STORE("Balance", 0)
+6 RETURN SEND_DERO_TO_ADDRESS(SIGNER(), qtyDeri) != qtyDeri
+7 RETURN 1
 End Function
 
 
-Function VoteNo(x String) Uint64
-1 IF ASSETVALUE(LOAD("Current")) == 1 THEN STORE("No", LOAD("Count")+1)
+// *************************************************
+// private helper functions
+// *************************************************
+Function isCreator() Uint64
+1 IF getCreator() != ADDRESS_STRING(SIGNER()) THEN GOTO 3
+2 RETURN 1
+3 RETURN 0
 End Function
 
-Function VoteYes() Uint64
-1 IF ASSETVALUE("Current") == 1 THEN STORE("Yes", LOAD("Count")+1)
+Function isSignerKnown() Uint64
+1 IF ADDRESS_STRING(SIGNER()) == "" THEN GOTO 3
+2 RETURN 1
+3 RETURN 0
 End Function
 
-Function UpdateCode( code String) Uint64
-1 IF LOAD("Ended") == 1 THEN GOTO 10 ELSE GOTO 20
-10  IF LOAD("owner") == SIGNER() THEN GOTO 30
-20  RETURN 1
-30  UPDATE_SC_CODE(code)
-40  RETURN 0
+Function isModifiable() Uint64
+1 IF getVotesMax() != 0 THEN GOTO 3
+2 RETURN 1
+3 RETURN 0
+End Function
+
+Function isVotingOpen() Uint64
+1 IF isModifiable() != 0 || getVotingStart() > BLOCK_TIMESTAMP() || (getVotingEnd() != 0 && getVotingEnd() < BLOCK_TIMESTAMP()) THEN GOTO 4
+3 RETURN 1
+4 RETURN 0
+End Function
+
+Function refund(qtyToken Uint64, qtyDeri Uint64) Uint64
+1 IF isSignerKnown() != 1 THEN GOTO 7
+2 IF qtyToken < 1 THEN GOTO 4
+3 SEND_ASSET_TO_ADDRESS(SIGNER(), qtyToken, SCID())
+4 IF qtyDeri < 1 THEN GOTO 6
+5 SEND_DERO_TO_ADDRESS(SIGNER(), qtyDeri)
+6 GOTO 11
+7 IF qtyToken < 1 THEN GOTO 9
+8 addVote(3, qtyToken) // invalid vote
+9 IF qtyDeri < 1 THEN GOTO 11
+10 addBalance(qtyDeri)
+11 RETURN 0
+End Function
+
+Function addBalance(qty Uint64) Uint64
+1 RETURN STORE("Balance", getBalance() + qty) != 1
+End Function
+
+Function addVote(choice Uint64, qty Uint64) // 0 = no, 1 = yes, 2 = abstain, 3 = invalid
+1 STORE(getVotesStoreKey(choice), getVotes(choice) + qty)
+2 STORE(getVotesStoreKey(4), getVotes(4) + qty)
+3 IF getDisplayVoters() != 1 || isSignerKnown() != 1 THEN GOTO 5
+4 STORE(getVotesStoreKey(choice) + "," + BLOCK_HEIGHT() + "," + BLOCK_TIMESTAMP(), ADDRESS_STRING(SIGNER()) + "," + qty)
+5 TallyVotes()
+6 RETURN
+End Function
+
+// *************************************************
+// private getter functions
+// *************************************************
+Function getVotesMax() Uint64
+1 IF EXISTS("VotesMax") != 1 THEN GOTO 3
+2 RETURN LOAD("VotesMax")
+3 RETURN 0
+End Function
+
+Function getVotingStart() Uint64
+1 IF EXISTS("VotingStart") != 1 THEN GOTO 3
+2 RETURN LOAD("VotingStart")
+3 RETURN 0
+End Function
+
+Function getVotingEnd() Uint64
+1 IF EXISTS("VotingEnd") != 1 THEN GOTO 3
+2 RETURN LOAD("VotingEnd")
+3 RETURN 0
+End Function
+
+Function getVotesMin(option Uint64) Uint64 // 0 = no, 1 = yes, 2 = total
+1 IF EXISTS(getVotesMinStoreKey(option)) != 1 THEN GOTO 3
+2 RETURN LOAD(getVotesMinStoreKey(option))
+3 RETURN 0
+End Function
+
+Function getVotingFee() Uint64
+1 IF EXISTS("VotingFee") != 1 THEN GOTO 3
+2 RETURN LOAD("VotingFee")
+3 RETURN 0
+End Function
+
+Function getCreator() String
+1 IF EXISTS("Creator") != 1 THEN GOTO 3
+2 RETURN LOAD("Creator")
+3 RETURN "false"
+End Function
+
+Function getDisplayVoters() Uint64
+1 IF EXISTS("DisplayVoters") != 1 THEN GOTO 3
+2 RETURN LOAD("DisplayVoters")
+3 RETURN 0
+End Function
+
+Function getRejectAnonymousVote() Uint64
+1 IF EXISTS("RejectAnonymousVote") != 1 THEN GOTO 3
+2 RETURN LOAD("RejectAnonymousVote")
+3 RETURN 0
+End Function
+
+Function getBalance() Uint64
+1 IF EXISTS("Balance") != 1 THEN GOTO 3
+2 RETURN LOAD("Balance")
+3 RETURN 0
+End Function
+
+Function getVotes(option Uint64) Uint64 // 0 = no, 1 = yes, 2 = abstain, 3 = invalid, 4 = total
+1 IF EXISTS(getVotesStoreKey(option)) != 1 THEN GOTO 3
+2 RETURN LOAD(getVotesStoreKey(option))
+3 RETURN 0
+End Function
+
+Function getVotesStoreKey(option Uint64) String
+1 IF option != 0 THEN GOTO 3
+2 RETURN "VotesNo"
+3 IF option != 1 THEN GOTO 5
+4 RETURN "VotesYes"
+5 IF option != 2 THEN GOTO 7
+6 RETURN "VotesAbstain"
+7 IF option != 3 THEN GOTO 9
+8 RETURN "VotesInvalid"
+9 IF option != 4 THEN GOTO 11
+10 RETURN "VotesTotal"
+11 RETURN ""
+End Function
+
+Function getVotesMinStoreKey(option Uint64) String
+1 IF option != 0 THEN GOTO 3
+2 RETURN "VotesNoMin"
+3 IF option != 1 THEN GOTO 5
+4 RETURN "VotesYesMin"
+5 IF option != 2 THEN GOTO 7
+6 RETURN "VotesTotalMin"
+9 RETURN ""
+End Function
+
+
+// *************************************************
+// private setter functions
+// *************************************************
+Function setVotesMax(qty Uint64) Uint64
+1 IF qty < 1 || isModifiable() != 1 THEN GOTO 4
+2 STORE("VotesMax", qty)
+3 RETURN SEND_ASSET_TO_ADDRESS(SIGNER(), qty, SCID()) != qty
+4 RETURN 1
+End Function
+
+Function setVotingStart(timestamp Uint64) Uint64
+1 IF timestamp < BLOCK_TIMESTAMP() || (getVotingEnd() != 0 && timestamp >= getVotingEnd()) || isModifiable() != 1 THEN GOTO 3
+2 RETURN STORE("VotingStart", timestamp) != 1
+3 RETURN 1
+End Function
+
+Function setVotingEnd(timestamp Uint64) Uint64
+1 IF timestamp <= BLOCK_TIMESTAMP() || (getVotingStart() != 0 && timestamp <= getVotingStart()) || isModifiable() != 1 THEN GOTO 3
+2 RETURN STORE("VotingEnd", timestamp) != 1
+3 RETURN 1
+End Function
+
+Function setVotesMin(qty Uint64, option Uint64) Uint64
+1 IF option < 0 || option > 2 || isModifiable() != 1 THEN GOTO 3
+2 RETURN STORE(getVotesMinStoreKey(option), qty) != 1
+3 RETURN 1
+End Function
+
+Function setVotingFee(qty Uint64) Uint64
+1 IF qty < 0 || isModifiable() != 1 THEN GOTO 3
+2 RETURN STORE("VotingFee", qty) != 1
+3 RETURN 1
+End Function
+
+Function setDisplayVoters(display Uint64) Uint64
+1 IF (display != 0 && display != 1) || isModifiable() != 1 THEN GOTO 3
+2 RETURN STORE("DisplayVoters", display) != 1
+3 RETURN 1
+End Function
+
+Function setRejectAnonymousVote(reject Uint64) Uint64
+1 IF (reject != 0 && reject != 1) || isModifiable() != 1 THEN GOTO 3
+2 RETURN STORE("RejectAnonymousVote", reject) != 1
+3 RETURN 1
+End Function
+
+Function setDescription(description String) Uint64
+1 IF isModifiable() != 1 THEN GOTO 3
+2 RETURN STORE("Description", description) != 1
+3 RETURN 1
 End Function
