@@ -31,5 +31,5 @@ The script `getScStatus.sh` expects a **simulator daemon rpc** accessible at `12
 
 ### Explanation
 `cli/invoke_wallet1.sh` executes the wrapper<br>
-`Vote` is the names of the public smart contract functions to invoke.<br>
+`Vote` is the name of the public smart contract function to invoke.<br>
 `0 1 2 0` defines how many DERI (0) and tokens (1) to send in the transaction, as well as the ring size (2) and the voting choice (0 = NO).<br>
