@@ -49,7 +49,7 @@ getVotesMin
 
 // time based conclusion
 8 IF getVotingEnd() == 0 || getVotingEnd() > BLOCK_TIMESTAMP() THEN GOTO 16 // time not yet up
-9 IF getVotesMin(2) == 0 || getVotesMin(2) > getVotes(4) THEN GOTO 15 // concluded as inconclusive
+9 IF getVotesMin(2) != 0 && getVotesMin(2) > getVotes(4) THEN GOTO 15 // concluded as inconclusive
 10 IF getVotes(0) == getVotes(1) THEN GOTO 15 // concluded as inconclusive
 11 IF getVotes(0) > getVotes(1) THEN GOTO 14
 12 LET conclusion = 1 // yes
