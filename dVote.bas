@@ -259,7 +259,7 @@ Function getVotesMinStoreKey(option Uint64) String
 4 RETURN "VotesYesMin"
 5 IF option != 2 THEN GOTO 7
 6 RETURN "VotesTotalMin"
-9 RETURN ""
+7 RETURN ""
 End Function
 
 
