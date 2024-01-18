@@ -5,6 +5,7 @@ This bash wrapper requires these tools / commands to invoke all smart contract f
 grep<br>
 sed<br>
 curl<br>
+jq <br>
 
 The wrapper expects **simulator wallet** rpc accessible at `127.0.0.1:20201` (wallet1), `127.0.0.1:20202` (wallet2), `127.0.0.1:20203` (wallet3), etc and without authentication.<br>
 The script `getScStatus.sh` expects a **simulator daemon rpc** accessible at `127.0.0.1:20000` without authentication.
