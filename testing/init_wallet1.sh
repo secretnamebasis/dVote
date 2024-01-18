@@ -20,3 +20,5 @@ cli/invoke_wallet1.sh UpdateVotesMax 0 0 2 25
 sleep 1
 # Vote with 100 DERI , 1 token, 2 rings, and yes=1
 cli/invoke_wallet1.sh Vote 100 1 2 1
+# TallyVote 0 deri 0 token 2 rings
+# cli/invoke_wallet1.sh TallyVotes 0 0 2
