@@ -1,14 +1,14 @@
 Function InitializePrivate() Uint64
 1 IF getCreator() != "false" THEN GOTO 4
-2 STORE("Creator", ADDRESS_STRING(SIGNER())) // mandatory: the address of the creator (mandatory for withdraw and update functions)
+// mandatory: creator address for withdraw and update functions
+2 STORE("Creator", ADDRESS_STRING(SIGNER()))
 3 RETURN 0
 4 RETURN 1
 End Function
 
-
-// *************************************************
-// public voting functions
-// *************************************************
+/**********************
+public voting functions
+**********************/
 Function Vote(choice Uint64) Uint64 // 0 = no, 1 = yes, 2 = abstain
 1 IF ASSETVALUE(SCID()) < 1 || DEROVALUE() < (getVotingFee() * ASSETVALUE(SCID())) || isVotingOpen() != 1 || choice < 0 || choice > 2 || (getRejectAnonymousVote() != 0 && isSignerKnown() != 1) THEN GOTO 5
 2 addVote(choice, ASSETVALUE(SCID()))
@@ -17,20 +17,39 @@ Function Vote(choice Uint64) Uint64 // 0 = no, 1 = yes, 2 = abstain
 5 RETURN refund(ASSETVALUE(SCID()), DEROVALUE())
 End Function
 
-// getVotes(0) = no, getVotes(1) = yes, getVotes(2) = abstain, getVotes(3) = invalid, getVotes(4) = total
-// getVotesMin(0) = no, getVotesMin(1) = yes, getVotesMin(2) = total
+
+
 Function TallyVotes() Uint64
+
+/*************
+getVotes
+(0) = no,
+(1) = yes,
+(2) = abstain,
+(3) = invalid,
+(4) = total
+*************/
+
+/***********
+getVotesMin
+(0) = no,
+(1) = yes,
+(2) = total
+***********/
+
 1 DIM conclusion as Uint64
 2 LET conclusion = 2 // inconclusive
+
 // vote count based conclusion
 3 IF getVotesMin(0) == 0 || getVotesMin(0) > getVotes(0) THEN GOTO 5
 4 LET conclusion = 0 // no
 5 IF getVotesMin(1) == 0 || getVotesMin(1) > getVotes(1) THEN GOTO 7
 6 LET conclusion = 1 // yes
 7 IF conclusion != 2 THEN GOTO 15
+
 // time based conclusion
 8 IF getVotingEnd() == 0 || getVotingEnd() > BLOCK_TIMESTAMP() THEN GOTO 16 // time not yet up
-9 IF getVotesMin(2) == 0 || getVotesMin(2) > getVotes(4) THEN GOTO 15 // concluded as inconclusive
+9 IF getVotesMin(2) != 0 && getVotesMin(2) > getVotes(4) THEN GOTO 15 // concluded as inconclusive
 10 IF getVotes(0) == getVotes(1) THEN GOTO 15 // concluded as inconclusive
 11 IF getVotes(0) > getVotes(1) THEN GOTO 14
 12 LET conclusion = 1 // yes
@@ -40,9 +59,9 @@ Function TallyVotes() Uint64
 16 RETURN 0
 End Function
 
-// *************************************************
-// public admin functions
-// *************************************************
+/**********************
+ public admin functions
+**********************/
 Function UpdateDescription(description String) Uint64
 1 IF isCreator() != 1 THEN GOTO 3
 2 RETURN setDescription(HEXDECODE(description))
@@ -102,9 +121,9 @@ Function Withdraw(qtyDeri Uint64) Uint64
 End Function
 
 
-// *************************************************
-// private helper functions
-// *************************************************
+/***********************
+private helper functions
+***********************/
 Function isCreator() Uint64
 1 IF getCreator() != ADDRESS_STRING(SIGNER()) THEN GOTO 3
 2 RETURN 1
@@ -156,9 +175,9 @@ Function addVote(choice Uint64, qty Uint64) // 0 = no, 1 = yes, 2 = abstain, 3 =
 6 RETURN
 End Function
 
-// *************************************************
-// private getter functions
-// *************************************************
+/***********************
+private getter functions
+***********************/
 Function getVotesMax() Uint64
 1 IF EXISTS("VotesMax") != 1 THEN GOTO 3
 2 RETURN LOAD("VotesMax")
@@ -244,9 +263,9 @@ Function getVotesMinStoreKey(option Uint64) String
 End Function
 
 
-// *************************************************
-// private setter functions
-// *************************************************
+/***********************
+private setter functions
+***********************/
 Function setVotesMax(qty Uint64) Uint64
 1 IF qty < 1 || isModifiable() != 1 THEN GOTO 4
 2 STORE("VotesMax", qty)
