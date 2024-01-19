@@ -45,13 +45,13 @@ getVotesMin
 4 LET conclusion = 0 // no
 5 IF getVotesMin(1) == 0 || getVotesMin(1) > getVotes(1) THEN GOTO 7
 6 LET conclusion = 1 // yes
-7 IF conclusion != 2 THEN GOTO 15
+7 IF conclusion != 2 THEN GOTO 15 // if concluded, then skip time based conclusion
 
 // time based conclusion
-8 IF getVotingEnd() == 0 || getVotingEnd() > BLOCK_TIMESTAMP() THEN GOTO 16 // time not yet up
+8 IF getVotingEnd() == 0 || getVotingEnd() > BLOCK_TIMESTAMP() THEN GOTO 16 // time not yet up, skip time based conclusion
 9 IF getVotesMin(2) != 0 && getVotesMin(2) > getVotes(4) THEN GOTO 15 // concluded as inconclusive
-10 IF getVotes(0) == getVotes(1) THEN GOTO 15 // concluded as inconclusive
-11 IF getVotes(0) > getVotes(1) THEN GOTO 14
+10 IF getVotes(0) == getVotes(1) THEN GOTO 15 // no and yes count is equal, concluded as inconclusive
+11 IF getVotes(0) > getVotes(1) THEN GOTO 14 // no count is higher than yes count, concluded as no
 12 LET conclusion = 1 // yes
 13 GOTO 15
 14 LET conclusion = 0 // no
@@ -143,19 +143,19 @@ Function isModifiable() Uint64
 End Function
 
 Function isVotingOpen() Uint64
-1 IF isModifiable() != 0 || getVotingStart() > BLOCK_TIMESTAMP() || (getVotingEnd() != 0 && getVotingEnd() < BLOCK_TIMESTAMP()) THEN GOTO 4
-3 RETURN 1
-4 RETURN 0
+1 IF isModifiable() != 0 || getVotingStart() > BLOCK_TIMESTAMP() || (getVotingEnd() != 0 && getVotingEnd() < BLOCK_TIMESTAMP()) THEN GOTO 3
+2 RETURN 1
+3 RETURN 0
 End Function
 
 Function refund(qtyToken Uint64, qtyDeri Uint64) Uint64
-1 IF isSignerKnown() != 1 THEN GOTO 7
+1 IF isSignerKnown() != 1 THEN GOTO 7 
 2 IF qtyToken < 1 THEN GOTO 4
 3 SEND_ASSET_TO_ADDRESS(SIGNER(), qtyToken, SCID())
-4 IF qtyDeri < 1 THEN GOTO 6
+4 IF qtyDeri < 1 THEN GOTO 11
 5 SEND_DERO_TO_ADDRESS(SIGNER(), qtyDeri)
 6 GOTO 11
-7 IF qtyToken < 1 THEN GOTO 9
+7 IF qtyToken < 1 THEN GOTO 9 // handle signer unknown, refunding impossible
 8 addVote(3, qtyToken) // invalid vote
 9 IF qtyDeri < 1 THEN GOTO 11
 10 addBalance(qtyDeri)
@@ -168,7 +168,7 @@ End Function
 
 Function addVote(choice Uint64, qty Uint64) // 0 = no, 1 = yes, 2 = abstain, 3 = invalid
 1 STORE(getVotesStoreKey(choice), getVotes(choice) + qty)
-2 STORE(getVotesStoreKey(4), getVotes(4) + qty)
+2 STORE(getVotesStoreKey(4), getVotes(4) + qty) // increase total vote count
 3 IF getDisplayVoters() != 1 || isSignerKnown() != 1 THEN GOTO 5
 4 STORE(getVotesStoreKey(choice) + "," + BLOCK_HEIGHT() + "," + BLOCK_TIMESTAMP(), ADDRESS_STRING(SIGNER()) + "," + qty)
 5 TallyVotes()
