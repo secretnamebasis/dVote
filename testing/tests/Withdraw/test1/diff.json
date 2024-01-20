@@ -1,0 +1,14 @@
+{
+    "changed": {
+        "before": {
+            "Balance": 1000,
+            "balance": 2000
+        },
+        "after": {
+            "Balance": 800,
+            "balance": 1800
+        }
+    },
+    "timestamp": 1705720006,
+    "timestamp_human": "2024-01-20 03:06:46"
+}

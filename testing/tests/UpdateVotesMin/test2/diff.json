@@ -1,0 +1,22 @@
+{
+    "changed": {
+        "before": {
+            "VotesNoMin": 10,
+            "VotesNoMin_human": 10,
+            "VotesTotalMin": 30,
+            "VotesTotalMin_human": 30,
+            "VotesYesMin": 20,
+            "VotesYesMin_human": " "
+        },
+        "after": {
+            "VotesNoMin": 20,
+            "VotesNoMin_human": " ",
+            "VotesTotalMin": 25,
+            "VotesTotalMin_human": "%",
+            "VotesYesMin": 40,
+            "VotesYesMin_human": "@"
+        }
+    },
+    "timestamp": 1705714939,
+    "timestamp_human": "2024-01-20 01:42:19"
+}

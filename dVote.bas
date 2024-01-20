@@ -86,7 +86,7 @@ Function UpdateVotingEnd(timestamp Uint64) Uint64
 3 RETURN 1
 End Function
 
-Function UpdateVotesMin(qty Uint64, option Uint64) Uint64
+Function UpdateVotesMin(qty Uint64, option Uint64) Uint64 // 0 = no, 1 = yes, 2 = total
 1 IF isCreator() != 1 THEN GOTO 3
 2 RETURN setVotesMin(qty, option)
 3 RETURN 1
@@ -285,7 +285,7 @@ Function setVotingEnd(timestamp Uint64) Uint64
 3 RETURN 1
 End Function
 
-Function setVotesMin(qty Uint64, option Uint64) Uint64
+Function setVotesMin(qty Uint64, option Uint64) Uint64 // 0 = no, 1 = yes, 2 = total
 1 IF option < 0 || option > 2 || isModifiable() != 1 THEN GOTO 3
 2 RETURN STORE(getVotesMinStoreKey(option), qty) != 1
 3 RETURN 1
