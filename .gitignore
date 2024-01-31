@@ -1,2 +1,2 @@
 /testing/*.dat
-/testing/executeTests.php
+#/testing/tests/*/*/*.json

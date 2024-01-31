@@ -1,0 +1,26 @@
+{
+    "added": {
+        "Balance": 3000,
+        "Conclusion": 1,
+        "VotesAbstain": 10,
+        "VotesAbstain,262,1705737422": "6465726f3171797265377464367839723838793463617664677076366b376c7678366a33396c6673783432306870766833796470637274787278716761346d7035322c3130",
+        "VotesAbstain,262,1705737422_human": "dero1qyre7td6x9r88y4cavdgpv6k7lvx6j39lfsx420hpvh3ydpcrtxrxqga4mp52,10",
+        "VotesNo": 10,
+        "VotesNo,261,1705737421": "6465726f3171797265377464367839723838793463617664677076366b376c7678366a33396c6673783432306870766833796470637274787278716761346d7035322c3130",
+        "VotesNo,261,1705737421_human": "dero1qyre7td6x9r88y4cavdgpv6k7lvx6j39lfsx420hpvh3ydpcrtxrxqga4mp52,10",
+        "VotesTotal": 30,
+        "VotesYes": 10,
+        "VotesYes,263,1705737423": "6465726f3171797265377464367839723838793463617664677076366b376c7678366a33396c6673783432306870766833796470637274787278716761346d7035322c3130",
+        "VotesYes,263,1705737423_human": "dero1qyre7td6x9r88y4cavdgpv6k7lvx6j39lfsx420hpvh3ydpcrtxrxqga4mp52,10"
+    },
+    "changed": {
+        "before": {
+            "balance": 0
+        },
+        "after": {
+            "balance": 3000
+        }
+    },
+    "timestamp": 1705737424,
+    "timestamp_human": "2024-01-20 07:57:04"
+}

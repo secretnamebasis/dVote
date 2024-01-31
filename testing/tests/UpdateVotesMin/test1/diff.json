@@ -1,0 +1,10 @@
+{
+    "added": {
+        "VotesNoMin": 10,
+        "VotesTotalMin": 30,
+        "VotesYesMin": 20,
+        "VotesYesMin_human": " "
+    },
+    "timestamp": 1705714935,
+    "timestamp_human": "2024-01-20 01:42:15"
+}

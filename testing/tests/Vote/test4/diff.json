@@ -1,0 +1,22 @@
+{
+    "changed": {
+        "before": {
+            "Balance": 700,
+            "VotesAbstain": 1,
+            "VotesNo": 1,
+            "VotesTotal": 7,
+            "VotesYes": 5,
+            "balance": 700
+        },
+        "after": {
+            "Balance": 1423,
+            "VotesAbstain": 2,
+            "VotesNo": 2,
+            "VotesTotal": 14,
+            "VotesYes": 10,
+            "balance": 1423
+        }
+    },
+    "timestamp": 1705735636,
+    "timestamp_human": "2024-01-20 07:27:16"
+}

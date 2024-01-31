@@ -1,0 +1,16 @@
+{
+    "changed": {
+        "before": {
+            "VotingEnd": 1705721628,
+            "VotingEnd_human": "2024-01-20 03:33:48",
+            "VotingEnd_offset": 3597
+        },
+        "after": {
+            "VotingEnd": 1705718630,
+            "VotingEnd_human": "2024-01-20 02:43:50",
+            "VotingEnd_offset": 599
+        }
+    },
+    "timestamp": 1705718031,
+    "timestamp_human": "2024-01-20 02:33:51"
+}
