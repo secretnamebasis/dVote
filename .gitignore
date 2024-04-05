@@ -1,6 +1,6 @@
 *.db
 *.bak
 *.log
-/testing/*.dat
+*.dat
 /testnet_simulator/*
 #/testing/tests/*/*/*.json
